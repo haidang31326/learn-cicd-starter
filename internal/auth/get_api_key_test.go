@@ -1,0 +1,56 @@
+package auth
+
+import (
+	"net/http"
+	"testing"
+)
+
+func TestGetAPIKey(t *testing.T) {
+	tests := []struct {
+		name      string
+		headers   http.Header
+		want      string
+		wantError bool
+	}{
+		{
+			name: "valid api key",
+			headers: http.Header{
+				"Authorization": []string{"ApiKey test-api-key"},
+			},
+			want:      "test-api-key",
+			wantError: false,
+		},
+		{
+			name:      "missing authorization header",
+			headers:   http.Header{},
+			want:      "",
+			wantError: true,
+		},
+		{
+			name: "malformed authorization header",
+			headers: http.Header{
+				"Authorization": []string{"Bearer test-api-key"},
+			},
+			want:      "",
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetAPIKey(tt.headers)
+
+			if tt.wantError && err == nil {
+				t.Fatalf("expected error, got nil")
+			}
+
+			if !tt.wantError && err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			if got != tt.want {
+				t.Fatalf("expected %q, got %q", tt.want, got)
+			}
+		})
+	}
+}
