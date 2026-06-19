@@ -38,6 +38,10 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: "1.26.0"
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+      - name: check security with gosec
+        run: gosec ./...
 
       - name: Run tests
         run: go test ./...
