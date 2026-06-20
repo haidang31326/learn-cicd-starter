@@ -30,5 +30,8 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 		return
 	}
 	w.WriteHeader(code)
-	w.Write(dat)
+	// Bắt lỗi thay vì chỉ viết w.Write(dat)
+	if _, err := w.Write(dat); err != nil {
+		log.Printf("Lỗi khi phản hồi dữ liệu: %v", err)
+	}
 }
