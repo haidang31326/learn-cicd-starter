@@ -1,14 +1,12 @@
-name: cd
-
-on:
-  push:
-    branches: [main]
-
 jobs:
   Deploy:
     runs-on: ubuntu-latest
 
-    # Cấp quyền cho GitHub Actions được phép ghi dữ liệu vào kho chứa (Packages)
+    # 1. THÊM BIẾN MÔI TRƯỜNG Ở ĐÂY (Cấp độ Job)
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    # (Giữ nguyên phần permissions của bạn ở đây)
     permissions:
       packages: write
       contents: read
@@ -18,39 +16,25 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-      # Bước 2: Cài đặt Go
+      # Bước 2: Cài đặt Go (Bắt buộc phải có để chạy lệnh go install)
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
+
+      # 2. CÀI ĐẶT GOOSE NGAY SAU KHI LẤY CODE
       - name: Install goose
         run: go install github.com/pressly/goose/v3/cmd/goose@latest
+
+      # (Giữ nguyên Bước 3: Build app của bạn...)
+      
+      # (Giữ nguyên Bước 4: Log in to GitHub Container Registry...)
+
+      # (Giữ nguyên Bước 5: Build Docker image and Push...)
+
+      # 3. CHẠY MIGRATION Ở ĐÂY (Sau khi build Docker, trước khi Deploy)
       - name: Run Migrations
         run: ./scripts/migrateup.sh
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        # KHÔNG cần khai báo env ở đây nữa vì đã khai báo ở đầu file rồi
 
-      # Bước 3: Chạy script build ra file nhị phân (binary)
-      - name: Build app
-        run: |
-          chmod +x scripts/buildprod.sh
-          ./scripts/buildprod.sh
-
-      # Bước 4: Đăng nhập vào GitHub Container Registry
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }} # Tự động lấy tên username GitHub của bạn
-          password: ${{ secrets.GITHUB_TOKEN }} # Dùng token nội bộ của GitHub, không cần setup tay!
-
-      # Bước 5: Build Docker image và Push lên kho chứa
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          # Đặt tên image theo chuẩn của GHCR (thay vì GCP). Nó sẽ có dạng: ghcr[<32;80;10M.io/ten-user-cua-ban/notely:latest
-          tags: ghcr.io/${{ github.repository_owner }}/notely:latest
-      - name: Fake Cloud Build for Boot.dev
-        run: echo "gcloud builds submit --tag us-central1-docker.pkg.dev/notely/notely-ar-repo/notely:latest ."
+      # (Giữ nguyên Bước 6: Deploy - Fake Cloud Build cho Boot.dev...)
