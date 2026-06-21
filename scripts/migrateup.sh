@@ -1,8 +1,5 @@
 #!/bin/bash
-
 if [ -f .env ]; then
-    source .env
+  source .env
 fi
-
-cd sql/schema
-goose turso $DATABASE_URL up
+goose -dir sql/schema turso "$DATABASE_URL" up
