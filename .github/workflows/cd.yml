@@ -13,7 +13,7 @@ jobs:
       packages: write
       contents: read
 
-    steps:i
+    steps:
       # Bước 1: Lấy code về
       - name: Check out code
         uses: actions/checkout@v4
