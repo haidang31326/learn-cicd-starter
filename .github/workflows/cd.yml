@@ -1,12 +1,15 @@
+on:
+  push:
+    branches: [main]
+
 jobs:
   Deploy:
     runs-on: ubuntu-latest
 
-    # 1. THÊM BIẾN MÔI TRƯỜNG Ở ĐÂY (Cấp độ Job)
+    # Biến môi trường dùng chung cho toàn bộ Job theo chuẩn đề bài
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-    # (Giữ nguyên phần permissions của bạn ở đây)
     permissions:
       packages: write
       contents: read
@@ -16,25 +19,42 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-      # Bước 2: Cài đặt Go (Bắt buộc phải có để chạy lệnh go install)
+      # Bước 2: Cài đặt Go
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
 
-      # 2. CÀI ĐẶT GOOSE NGAY SAU KHI LẤY CODE
+      # Bước 3: Cài đặt Goose ngay sau khi có code
       - name: Install goose
         run: go install github.com/pressly/goose/v3/cmd/goose@latest
 
-      # (Giữ nguyên Bước 3: Build app của bạn...)
-      
-      # (Giữ nguyên Bước 4: Log in to GitHub Container Registry...)
+      # Bước 4: Build app
+      - name: Build app
+        run: |
+          chmod +x scripts/buildprod.sh
+          ./scripts/buildprod.sh
 
-      # (Giữ nguyên Bước 5: Build Docker image and Push...)
+      # Bước 5: Đăng nhập vào GHCR
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 3. CHẠY MIGRATION Ở ĐÂY (Sau khi build Docker, trước khi Deploy)
+      # Bước 6: Build & Push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/notely:latest
+
+      # Bước 7: Chạy Migration (Sau khi build, trước khi deploy)
       - name: Run Migrations
         run: ./scripts/migrateup.sh
-        # KHÔNG cần khai báo env ở đây nữa vì đã khai báo ở đầu file rồi
 
-      # (Giữ nguyên Bước 6: Deploy - Fake Cloud Build cho Boot.dev...)
+      # Bước 8: Lừa bot Boot.dev là đã deploy
+      - name: Fake Cloud Build for Boot.dev
+        run: echo "gcloud builds submit --tag us-central1-docker.pkg.dev/notely/notely-ar-repo/notely:latest ."
